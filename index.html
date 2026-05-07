@@ -521,4 +521,20 @@ function App() {
                             </div>
                             <div className="pt-6 flex gap-4">
                                 <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null); setForm(initialForm); }} className="flex-1 px-6 py-4 border border-slate-200 text-slate-500 rounded-2xl font-bold hover:bg-slate-50 transition-all text-sm">取消</button>
-                                <button type="submit" className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2
+                                <button type="submit" className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 text-sm">
+                                    {editingId ? '更新任務' : '儲存任務'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
