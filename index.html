@@ -81,7 +81,7 @@ function App() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId]   = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus]   = useState('All');
+    const [filterStatus, setFilterStatus]   = useState([]);
     const [filterClient, setFilterClient]   = useState('All');
     const [filterProject, setFilterProject] = useState('All');
     const [filterOwner, setFilterOwner]     = useState('All');
@@ -231,7 +231,7 @@ function App() {
     const filtered = tasks.filter(t => {
         const q = searchTerm.toLowerCase();
         return (!q || [t.client, t.project, t.task, t.owner, t.remarks, t.taskNo].some(v => (v||'').toLowerCase().includes(q)))
-            && (filterStatus  === 'All' || t.status  === filterStatus)
+            && (filterStatus.length === 0 || filterStatus.includes(t.status))
             && (filterClient  === 'All' || t.client  === filterClient)
             && (filterProject === 'All' || t.project === filterProject)
             && (filterOwner   === 'All' || t.owner   === filterOwner);
@@ -338,14 +338,27 @@ function App() {
                         </select>
                     </div>
                     <div className="flex flex-col space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">狀態</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">狀態（可多選）</label>
                         <div className="flex bg-white border border-slate-200 rounded-2xl p-1 shadow-sm h-[46px] gap-0.5">
-                            {['All', ...Object.keys(STATUS_OPTIONS)].map(s => (
-                                <button key={s} onClick={() => setFilterStatus(s)}
-                                    className={`flex-1 rounded-xl text-[9px] font-black transition-all ${filterStatus === s ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
-                                    {s === 'All' ? '全部' : s}
-                                </button>
-                            ))}
+                            <button
+                                onClick={() => setFilterStatus([])}
+                                className={`flex-1 rounded-xl text-[9px] font-black transition-all ${filterStatus.length === 0 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
+                                全部
+                            </button>
+                            {Object.keys(STATUS_OPTIONS).map(s => {
+                                const isSelected = filterStatus.includes(s);
+                                return (
+                                    <button key={s}
+                                        onClick={() => {
+                                            setFilterStatus(prev =>
+                                                prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+                                            );
+                                        }}
+                                        className={`flex-1 rounded-xl text-[9px] font-black transition-all ${isSelected ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
+                                        {s}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -514,21 +527,4 @@ function App() {
                                 )}
                             </div>
                             <div className="pt-6 flex gap-4">
-                                <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null); setForm(initialForm); }} className="flex-1 px-6 py-4 border border-slate-200 text-slate-500 rounded-2xl font-bold hover:bg-slate-50 transition-all text-sm">取消</button>
-                                <button type="submit" className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 text-sm">
-                                    {editingId ? '更新任務' : '儲存任務'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-</script>
-</body>
-</html>
+                                <button type="button" onClick={()
