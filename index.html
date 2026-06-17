@@ -138,9 +138,11 @@ function App() {
         if (file.size > 500 * 1024) { alert('附件需小於 500KB（Firebase 文件限制）'); return; }
         const reader = new FileReader();
         reader.onload = ev => {
+            // 使用純數學與字串拼接生成安全的隨機 ID，避開瀏覽器權限限制
+            const safeRandomId = 'id-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
             setForm(prev => ({
                 ...prev,
-                files: [...(prev.files||[]), { id: crypto.randomUUID(), name: file.name, type: file.type, size: file.size, data: ev.target.result }]
+                files: [...(prev.files||[]), { id: safeRandomId, name: file.name, type: file.type, size: file.size, data: ev.target.result }]
             }));
         };
         reader.readAsDataURL(file);
