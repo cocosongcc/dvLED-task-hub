@@ -8,7 +8,8 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@0.359.0"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
@@ -21,6 +22,9 @@
 <body class="bg-slate-50">
 <div id="root"></div>
 
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  ★ 步驟 3：將下方換成你自己的 Firebase 設定       ★  ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
 <script>
 const firebaseConfig = {
     apiKey:            "AIzaSyAhIDyqik-pHQm65kYV3jqS0iFzhZZpb5U",
@@ -39,15 +43,7 @@ const db = firebase.firestore();
 const { useState, useEffect, useMemo, useRef } = React;
 
 const Icon = ({ name, size = 18, className = "" }) => {
-    useEffect(() => { 
-        try {
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                window.lucide.createIcons(); 
-            }
-        } catch (err) {
-            console.error("Lucide 圖標渲染失敗:", err);
-        }
-    }, [name]);
+    useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
     return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
 };
 
@@ -61,8 +57,21 @@ const STATUS_OPTIONS = {
 
 const DEFAULT_PROJECTS = ['官網重建專案','dvLED 展示牆','會議室 AV 整合','展覽攤位 LED','總部大廳顯示牆'];
 
+// ── 原始資料（第一次開啟時自動寫入 Firebase）──
 const SEED = [
-    {id:'s1', taskNo:'1001',client:'台灣銀行',  project:'官網重建專案',   task:'需求訪談 & 規格確認',  assignedDate:'2026-03-25',owner:'王小明',status:'已完成',dueDate:'2026-03-28',remarks:'',         createdAt:1}
+    {id:'s1', taskNo:'1001',client:'台灣銀行',  project:'官網重建專案',   task:'需求訪談 & 規格確認',  assignedDate:'2026-03-25',owner:'王小明',status:'已完成',dueDate:'2026-03-28',remarks:'',         createdAt:1},
+    {id:'s2', taskNo:'1002',client:'台灣銀行',  project:'官網重建專案',   task:'UI 線框稿設計',       assignedDate:'2026-03-28',owner:'陳美麗',status:'進行中',dueDate:'2026-04-10',remarks:'',         createdAt:2},
+    {id:'s3', taskNo:'1003',client:'台灣銀行',  project:'官網重建專案',   task:'後端 API 開發',       assignedDate:'2026-04-01',owner:'李大偉',status:'未開始',dueDate:'2026-04-25',remarks:'',         createdAt:3},
+    {id:'s4', taskNo:'1004',client:'遠傳電信',  project:'dvLED 展示牆',  task:'現場勘查 & 丈量',     assignedDate:'2026-03-20',owner:'張志豪',status:'已完成',dueDate:'2026-03-21',remarks:'',         createdAt:4},
+    {id:'s5', taskNo:'1005',client:'遠傳電信',  project:'dvLED 展示牆',  task:'BOM 報價製作',        assignedDate:'2026-03-22',owner:'王小明',status:'已完成',dueDate:'2026-03-24',remarks:'',         createdAt:5},
+    {id:'s6', taskNo:'1006',client:'遠傳電信',  project:'dvLED 展示牆',  task:'採購詢價 & 下單',     assignedDate:'2026-03-25',owner:'陳美麗',status:'進行中',dueDate:'2026-04-05',remarks:'等待廠商報價',createdAt:6},
+    {id:'s7', taskNo:'1007',client:'遠傳電信',  project:'dvLED 展示牆',  task:'到貨驗收',            assignedDate:'2026-04-06',owner:'李大偉',status:'未開始',dueDate:'2026-04-20',remarks:'',         createdAt:7},
+    {id:'s8', taskNo:'1008',client:'台積電',    project:'會議室 AV 整合', task:'工程設計圖繪製',      assignedDate:'2026-03-30',owner:'張志豪',status:'進行中',dueDate:'2026-04-08',remarks:'',         createdAt:8},
+    {id:'s9', taskNo:'1009',client:'台積電',    project:'會議室 AV 整合', task:'設備規格文件準備',    assignedDate:'2026-04-01',owner:'王小明',status:'待審核',dueDate:'2026-04-07',remarks:'待客戶確認', createdAt:9},
+    {id:'s10',taskNo:'1010',client:'台積電',    project:'會議室 AV 整合', task:'安裝施工',            assignedDate:'2026-04-10',owner:'陳美麗',status:'未開始',dueDate:'2026-04-22',remarks:'',         createdAt:10},
+    {id:'s11',taskNo:'1011',client:'聯發科',    project:'展覽攤位 LED',  task:'展覽需求確認',        assignedDate:'2026-04-01',owner:'李大偉',status:'進行中',dueDate:'2026-04-04',remarks:'',         createdAt:11},
+    {id:'s12',taskNo:'1012',client:'聯發科',    project:'展覽攤位 LED',  task:'設備進場規劃',        assignedDate:'2026-04-03',owner:'張志豪',status:'未開始',dueDate:'2026-04-18',remarks:'',         createdAt:12},
+    {id:'s13',taskNo:'1013',client:'鴻海集團',  project:'總部大廳顯示牆', task:'提案簡報製作',        assignedDate:'2026-04-02',owner:'王小明',status:'延遲',  dueDate:'2026-03-31',remarks:'客戶未回覆', createdAt:13},
 ];
 
 function App() {
@@ -86,8 +95,11 @@ function App() {
     };
     const [form, setForm] = useState(initialForm);
 
+    // ── Firebase: 啟動時確認資料、開啟即時監聽 ──
     useEffect(() => {
         const col = db.collection('tasks');
+
+        // 若 Firebase 是空的，寫入 SEED 資料
         col.limit(1).get().then(snap => {
             if (snap.empty) {
                 const batch = db.batch();
@@ -101,6 +113,7 @@ function App() {
             setSyncStatus('⚠ 連線失敗，請確認 Firebase 設定');
         });
 
+        // 即時監聽（所有同事的異動都會推送過來）
         const unsubscribe = col.orderBy('createdAt', 'asc').onSnapshot(
             snapshot => {
                 setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -113,8 +126,11 @@ function App() {
                 setIsLoading(false);
             }
         );
-        return () => unsubscribe();
+
+        return () => unsubscribe(); // 離開頁面時取消監聽
     }, []);
+
+
 
     const uniqueClients  = useMemo(() => [...new Set(tasks.map(t=>t.client))].filter(Boolean).sort(), [tasks]);
     const uniqueProjects = useMemo(() => [...new Set([...DEFAULT_PROJECTS,...tasks.map(t=>t.project)])].filter(Boolean).sort(), [tasks]);
@@ -126,11 +142,9 @@ function App() {
         if (file.size > 500 * 1024) { alert('附件需小於 500KB（Firebase 文件限制）'); return; }
         const reader = new FileReader();
         reader.onload = ev => {
-            // 避開 crypto.randomUUID 安全存取限制，改用安全的純 JS 隨機 ID 方案
-            const safeRandomId = 'id-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
             setForm(prev => ({
                 ...prev,
-                files: [...(prev.files||[]), { id: safeRandomId, name: file.name, type: file.type, size: file.size, data: ev.target.result }]
+                files: [...(prev.files||[]), { id: crypto.randomUUID(), name: file.name, type: file.type, size: file.size, data: ev.target.result }]
             }));
         };
         reader.readAsDataURL(file);
@@ -169,6 +183,7 @@ function App() {
     };
 
     const handleStatusChange = async (id, newStatus) => {
+        const task = tasks.find(t => t.id === id);
         await db.collection('tasks').doc(id).update({ status: newStatus });
     };
 
@@ -200,7 +215,7 @@ function App() {
         reader.onload = async ev => {
             try {
                 const d = JSON.parse(ev.target.result);
-                if (Array.isArray(d) && confirm(`載入 ${d.length} 筆到 Firebase？`)) {
+                if (Array.isArray(d) && confirm(`載入 ${d.length} 筆到 Firebase？資料將新增到現有清單。`)) {
                     const col = db.collection('tasks');
                     const batch = db.batch();
                     d.forEach(({ id, ...data }) => {
@@ -208,7 +223,7 @@ function App() {
                     });
                     await batch.commit();
                 }
-            } catch { alert('格式錯誤'); }
+            } catch { alert('格式錯誤，請選擇正確的 JSON 備份檔'); }
         };
         reader.readAsText(file);
         e.target.value = null;
@@ -230,6 +245,7 @@ function App() {
     const kpiDone    = tasks.filter(t => t.status === '已完成').length;
     const kpiDelayed = tasks.filter(t => t.status === '延遲').length;
 
+    // ── 載入畫面 ──
     if (isLoading) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
             <div className="text-center">
@@ -242,6 +258,8 @@ function App() {
 
     return (
         <div className="min-h-screen pb-20">
+
+            {/* ── Header ── */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm px-6 py-4">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <div className="flex items-center space-x-3">
@@ -268,7 +286,10 @@ function App() {
                             <Icon name="upload" size={16}/><span className="text-slate-600">匯入 JSON</span>
                         </button>
                         <input type="file" ref={fileInputRef} onChange={importJson} className="hidden" accept=".json" />
-                        <button onClick={() => { setEditingId(null); setForm(initialForm); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 active:scale-95 transition-all ml-2">
+                        <button
+                            onClick={() => { setEditingId(null); setForm(initialForm); setIsModalOpen(true); }}
+                            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 active:scale-95 transition-all ml-2"
+                        >
                             <Icon name="plus" size={18} className="inline mr-1"/>新增任務
                         </button>
                     </div>
@@ -276,6 +297,8 @@ function App() {
             </header>
 
             <main className="max-w-7xl mx-auto px-6 py-8">
+
+                {/* ── KPI 卡片 ── */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     {[
                         {label:'總任務', val:kpiTotal,   color:'border-indigo-500', num:'text-indigo-600'},
@@ -290,6 +313,7 @@ function App() {
                     ))}
                 </div>
 
+                {/* ── 篩選列 ── */}
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                     <div className="relative group md:col-span-1">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"><Icon name="search" size={16}/></div>
@@ -319,14 +343,23 @@ function App() {
                     <div className="flex flex-col space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">狀態（可多選）</label>
                         <div className="flex bg-white border border-slate-200 rounded-2xl p-1 shadow-sm h-[46px] gap-0.5">
-                            <button onClick={() => setFilterStatus([])} className={'flex-1 rounded-xl text-[9px] font-black transition-all ' + (filterStatus.length === 0 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50')}>全部</button>
+                            <button
+                                onClick={() => setFilterStatus([])}
+                                className={'flex-1 rounded-xl text-[9px] font-black transition-all ' + (filterStatus.length === 0 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50')}>
+                                全部
+                            </button>
                             {Object.keys(STATUS_OPTIONS).map(s => (
-                                <button key={s} onClick={() => setFilterStatus(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])} className={'flex-1 rounded-xl text-[9px] font-black transition-all ' + (filterStatus.includes(s) ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50')}>{s}</button>
+                                <button key={s}
+                                    onClick={() => setFilterStatus(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                                    className={'flex-1 rounded-xl text-[9px] font-black transition-all ' + (filterStatus.includes(s) ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50')}>
+                                    {s}
+                                </button>
                             ))}
                         </div>
                     </div>
                 </div>
 
+                {/* ── 表格 ── */}
                 <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-200 overflow-hidden">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -351,22 +384,39 @@ function App() {
                                     <tr key={t.id} className="hover:bg-slate-50/80 transition-all group">
                                         <td className="px-5 py-5 font-mono text-[12px] text-slate-400">#{t.taskNo}</td>
                                         <td className="px-5 py-5 font-bold text-slate-800 text-sm whitespace-nowrap">{t.client}</td>
-                                        <td className="px-5 py-5"><span className="text-[10px] px-2.5 py-1 bg-white border border-slate-200 text-slate-500 rounded-lg font-black uppercase tracking-tight shadow-sm whitespace-nowrap">{t.project}</span></td>
+                                        <td className="px-5 py-5">
+                                            <span className="text-[10px] px-2.5 py-1 bg-white border border-slate-200 text-slate-500 rounded-lg font-black uppercase tracking-tight shadow-sm whitespace-nowrap">{t.project}</span>
+                                        </td>
                                         <td className="px-5 py-5 max-w-[220px]">
                                             <div className="flex flex-col gap-1">
                                                 <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{t.task}</p>
                                                 {t.remarks && <p className="text-[10px] text-indigo-400 font-medium italic line-clamp-1">{t.remarks}</p>}
-                                                {t.files && t.files.length > 0 && <div className="flex items-center text-[10px] text-emerald-500 font-bold"><Icon name="paperclip" size={10} className="mr-0.5"/>{t.files.length} 個附件</div>}
+                                                {t.files && t.files.length > 0 && (
+                                                    <div className="flex items-center text-[10px] text-emerald-500 font-bold">
+                                                        <Icon name="paperclip" size={10} className="mr-0.5"/>{t.files.length} 個附件
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
-                                        <td className="px-5 py-5 text-xs font-medium text-slate-500 whitespace-nowrap"><div className="flex items-center gap-1.5"><Icon name="calendar-plus" size={12}/>{t.assignedDate || '—'}</div></td>
+                                        <td className="px-5 py-5 text-xs font-medium text-slate-500 whitespace-nowrap">
+                                            <div className="flex items-center gap-1.5"><Icon name="calendar-plus" size={12}/>{t.assignedDate || '—'}</div>
+                                        </td>
                                         <td className="px-5 py-5 text-sm font-bold text-slate-700 whitespace-nowrap">{t.owner}</td>
                                         <td className="px-5 py-5">
-                                            <select value={t.status} onChange={e => handleStatusChange(t.id, e.target.value)} className={`appearance-none px-3 py-1.5 rounded-xl text-[11px] font-black border-none cursor-pointer focus:ring-4 focus:ring-indigo-100 transition-all ${STATUS_OPTIONS[t.status]?.color || 'bg-slate-100 text-slate-600'}`}>
+                                            <select
+                                                value={t.status}
+                                                onChange={e => handleStatusChange(t.id, e.target.value)}
+                                                className={`appearance-none px-3 py-1.5 rounded-xl text-[11px] font-black border-none cursor-pointer focus:ring-4 focus:ring-indigo-100 transition-all ${STATUS_OPTIONS[t.status]?.color || 'bg-slate-100 text-slate-600'}`}
+                                            >
                                                 {Object.keys(STATUS_OPTIONS).map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
                                         </td>
-                                        <td className={`px-5 py-5 text-xs font-medium whitespace-nowrap ${isOverdue ? 'text-rose-500 font-bold' : 'text-slate-500'}`}><div className="flex items-center gap-1.5"><Icon name={isOverdue ? "alert-triangle" : "calendar"} size={12}/>{t.dueDate || '—'}</div></td>
+                                        <td className={`px-5 py-5 text-xs font-medium whitespace-nowrap ${isOverdue ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                                            <div className="flex items-center gap-1.5">
+                                                <Icon name={isOverdue ? "alert-triangle" : "calendar"} size={12}/>
+                                                {t.dueDate || '—'}
+                                            </div>
+                                        </td>
                                         <td className="px-5 py-5 text-right">
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {t.files && t.files.length > 0 && (
@@ -375,7 +425,9 @@ function App() {
                                                         <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 hidden group-hover/files:block z-20 p-2">
                                                             <p className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase">附件</p>
                                                             {t.files.map(f => (
-                                                                <button key={f.id} onClick={() => downloadFile(f)} className="w-full text-left px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50 rounded-lg flex items-center justify-between"><span className="truncate mr-2">{f.name}</span><Icon name="download" size={12}/></button>
+                                                                <button key={f.id} onClick={() => downloadFile(f)} className="w-full text-left px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50 rounded-lg flex items-center justify-between">
+                                                                    <span className="truncate mr-2">{f.name}</span><Icon name="download" size={12}/>
+                                                                </button>
                                                             ))}
                                                         </div>
                                                     </div>
@@ -389,11 +441,13 @@ function App() {
                             })}
                         </tbody>
                     </table>
-                    <div className="px-6 py-3 border-t border-slate-100 text-right text-xs text-slate-400 font-medium">顯示 {filtered.length} / {tasks.length} 筆 · 即時同步中</div>
+                    <div className="px-6 py-3 border-t border-slate-100 text-right text-xs text-slate-400 font-medium">
+                        顯示 {filtered.length} / {tasks.length} 筆 · 即時同步中
+                    </div>
                 </div>
             </main>
 
-            {/* Modal 視窗彈出層 */}
+            {/* ── Modal ── */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden border border-white/20">
@@ -447,7 +501,9 @@ function App() {
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center justify-between">
                                     <span className="flex items-center gap-1.5"><Icon name="file-text" size={12} className="text-indigo-500"/>備註</span>
-                                    <button type="button" onClick={() => attachmentRef.current.click()} className="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg text-[10px] font-black flex items-center gap-1"><Icon name="upload-cloud" size={12}/> 附加檔案</button>
+                                    <button type="button" onClick={() => attachmentRef.current.click()} className="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg text-[10px] font-black flex items-center gap-1">
+                                        <Icon name="upload-cloud" size={12}/> 附加檔案（上限 500KB）
+                                    </button>
                                 </label>
                                 <textarea rows="3" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none resize-none text-sm font-medium leading-relaxed" placeholder="備註說明…" value={form.remarks} onChange={e => setForm({...form, remarks: e.target.value})}></textarea>
                                 <input type="file" ref={attachmentRef} onChange={handleFileUpload} className="hidden"/>
@@ -458,6 +514,7 @@ function App() {
                                                 <div className="flex items-center gap-2 truncate">
                                                     <Icon name="file" size={14} className="text-slate-400"/>
                                                     <span className="text-xs text-slate-600 font-semibold truncate">{f.name}</span>
+                                                    <span className="text-[9px] text-slate-400">({(f.size/1024).toFixed(1)} KB)</span>
                                                 </div>
                                                 <button type="button" onClick={() => setForm(prev => ({...prev, files: prev.files.filter(x => x.id !== f.id)}))} className="text-slate-300 hover:text-rose-500 p-1"><Icon name="x-circle" size={16}/></button>
                                             </div>
@@ -467,12 +524,15 @@ function App() {
                             </div>
                             <div className="pt-6 flex gap-4">
                                 <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null); setForm(initialForm); }} className="flex-1 px-6 py-4 border border-slate-200 text-slate-500 rounded-2xl font-bold hover:bg-slate-50 transition-all text-sm">取消</button>
-                                <button type="submit" className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 text-sm">儲存任務</button>
+                                <button type="submit" className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 text-sm">
+                                    {editingId ? '更新任務' : '儲存任務'}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
         </div>
     );
 }
