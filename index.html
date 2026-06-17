@@ -33,7 +33,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 2. 原生內建 SVG 圖標庫 (取代 Lucide 外掛，徹底防白屏)
+// 2. 原生內建 SVG 圖標庫 (徹底防止 Lucide 引起的白屏問題)
 const SVG_ICONS = {
     monitor: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>',
     plus: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
@@ -47,7 +47,7 @@ const SVG_ICONS = {
     upload: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
     paperclip: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
     x: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>',
-    filedown: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
+    filedown: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
 };
 
 function RawIcon({ name, className = "" }) {
@@ -87,6 +87,7 @@ function App() {
 
     React.useEffect(() => {
         const col = db.collection('tasks');
+        // 已徹底移除預設 SEED 資料，網頁僅會拉取並呈現在雲端建立的真實工作數據
         return col.orderBy('createdAt', 'asc').onSnapshot(snapshot => {
             setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             setIsLoading(false);
@@ -144,16 +145,16 @@ function App() {
             React.createElement('div', { className: 'text-center' },
                 React.createElement('div', { className: 'w-14 h-14 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-5' }),
                 React.createElement('p', { className: 'text-slate-600 font-bold text-lg' }, '連線到 Firebase...'),
-                React.createElement('p', { className: 'text-slate-400 text-sm mt-1' }, '正在同步雲端清單')
+                React.createElement('p', { className: 'text-slate-400 text-sm mt-1' }, '正在載入工作清單')
             )
         );
     }
 
-    // Header 區塊
+    // Header 結構
     const headerElement = React.createElement('header', { className: 'bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm px-6 py-4' },
         React.createElement('div', { className: 'max-w-7xl mx-auto flex justify-between items-center' },
             React.createElement('div', { className: 'flex items-center space-x-3' },
-                React.createElement('div', { className: 'bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100' }, React.createElement(RawIcon, { name: 'monitor' })),
+                React.createElement('div', { className: 'bg-indigo-600 p-2 rounded-xl text-white shadow-lg' }, React.createElement(RawIcon, { name: 'monitor' })),
                 React.createElement('div', null,
                     React.createElement('h1', { className: 'text-xl font-bold text-slate-800 tracking-tight' }, 'dvLED Task Tracking Hub'),
                     React.createElement('p', { className: 'text-[10px] font-bold uppercase tracking-widest text-emerald-500 flex items-center gap-1' }, React.createElement(RawIcon, { name: 'cloud' }), syncStatus)
@@ -177,12 +178,25 @@ function App() {
                         try { const d = JSON.parse(ev.target.result); if (Array.isArray(d) && confirm(`載入 ${d.length} 筆到 Firebase？`)) { d.forEach(x => db.collection('tasks').add({ ...x, createdAt: Date.now() })); } } catch { alert('格式錯誤'); }
                     }; reader.readAsText(file); e.target.value = null;
                 } }),
-                React.createElement('button', { onClick: () => { setEditingId(null); setForm(initialForm); setIsModalOpen(true); }, className: 'bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 active:scale-95 ml-2' }, React.createElement(RawIcon, { name: 'plus' }), '新增任務')
+                React.createElement('button', { onClick: () => { setEditingId(null); setForm(initialForm); setIsModalOpen(true); }, className: 'bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 ml-2' }, React.createElement(RawIcon, { name: 'plus' }), ' 新增任務')
             )
         )
     );
 
-    // Filter 區塊 (包含工作狀態多選按鈕)
+    // KPI 卡片結構 (已完美恢復任務總覽欄位)
+    const kpiElement = React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-8' },
+        [
+            {label:'總任務', val:tasks.length, color:'border-indigo-500', num:'text-indigo-600'},
+            {label:'進行中', val:tasks.filter(t=>t.status==='進行中').length, color:'border-amber-400', num:'text-amber-600'},
+            {label:'已完成', val:tasks.filter(t=>t.status==='已完成').length, color:'border-emerald-500', num:'text-emerald-600'},
+            {label:'延遲',   val:tasks.filter(t=>t.status==='延遲').length, color:'border-rose-500', num:'text-rose-600'},
+        ].map(k => React.createElement('div', { key: k.label, className: `bg-white rounded-2xl shadow-sm border-t-4 ${k.color} px-6 py-4` },
+            React.createElement('div', { className: `text-3xl font-black ${k.num}` }, k.val),
+            React.createElement('div', { className: 'text-xs text-slate-400 font-bold uppercase tracking-wider mt-1' }, k.label)
+        ))
+    );
+
+    // Filter 結構 (已恢復狀態多選按鈕 UI)
     const filterElement = React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-5 gap-4 mb-6' },
         React.createElement('div', { className: 'relative' }, React.createElement('input', { type: 'text', placeholder: '搜尋任務…', className: 'w-full pl-4 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-indigo-500', value: searchTerm, onChange: e => setSearchTerm(e.target.value) })),
         React.createElement('div', { className: 'flex flex-col space-y-1' }, React.createElement('label', { className: 'text-[10px] font-bold text-slate-400 uppercase ml-2' }, '客戶名'), React.createElement('select', { value: filterClient, onChange: e => setFilterClient(e.target.value), className: 'w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm shadow-sm outline-none' }, React.createElement('option', { value: 'All' }, '全部客戶'), uniqueClients.map(c => React.createElement('option', { key: c, value: c }, c)))),
@@ -197,8 +211,8 @@ function App() {
         )
     );
 
-    // Table 區塊
-    const tableBodyElement = filtered.map(t => React.createElement('tr', { key: t.id, className: 'hover:bg-slate-50/80 group transition-all' },
+    // Table 結構
+    const tableRows = filtered.map(t => React.createElement('tr', { key: t.id, className: 'hover:bg-slate-50/80 group transition-all' },
         React.createElement('td', { className: 'px-5 py-5 font-mono text-[12px] text-slate-400' }, `#${t.taskNo || '1000'}`),
         React.createElement('td', { className: 'px-5 py-5 font-bold text-slate-800 text-sm whitespace-nowrap' }, t.client),
         React.createElement('td', { className: 'px-5 py-5' }, React.createElement('span', { className: 'text-[10px] px-2.5 py-1 bg-white border border-slate-200 text-slate-500 rounded-lg font-black uppercase tracking-tight shadow-sm whitespace-nowrap' }, t.project)),
@@ -222,46 +236,54 @@ function App() {
         )
     ));
 
-    const mainTableElement = React.createElement('div', { className: 'bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-200 overflow-hidden' },
+    const tableElement = React.createElement('div', { className: 'bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-200 overflow-hidden' },
         React.createElement('table', { className: 'w-full text-left border-collapse' },
             React.createElement('thead', { className: 'bg-slate-50 border-b border-slate-200 text-slate-400 text-[11px] font-bold uppercase tracking-wider' },
                 React.createElement('tr', null, ['No.', '客戶名', '專案名', '工作內容', '指派時間', '負責人員', '狀態', '預計結束', '操作'].map(h => React.createElement('th', { key: h, className: 'px-5 py-5' }, h)))
             ),
-            React.createElement('tbody', { className: 'divide-y divide-slate-100' }, tableBodyElement)
+            React.createElement('tbody', { className: 'divide-y divide-slate-100' }, tableRows)
         )
     );
 
-    // Modal 彈出視窗
+    // Modal 彈窗結構
     const modalElement = isModalOpen && React.createElement('div', { className: 'fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4' },
-        React.createElement('div', { className: 'bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden' },
+        React.createElement('div', { className: 'bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden border border-white/20' },
             React.createElement('div', { className: 'px-10 py-7 border-b border-slate-100 flex justify-between items-center bg-slate-50' },
-                React.createElement('div', null, React.createElement('h2', { className: 'text-2xl font-black text-slate-800' }, editingId ? '編輯任務' : '新增任務')),
-                React.createElement('button', { onClick: () => { setIsModalOpen(false); setForm(initialForm); }, className: 'bg-white p-2 border rounded-xl shadow-sm text-slate-400 hover:text-slate-600' }, React.createElement(RawIcon, { name: 'x' }))
+                React.createElement('div', null, 
+                    React.createElement('h2', { className: 'text-2xl font-black text-slate-800 tracking-tight' }, editingId ? '編輯任務' : '新增任務'),
+                    React.createElement('p', { className: 'text-xs text-slate-400 font-medium mt-1' }, editingId ? `修改 #${tasks.find(t => t.id === editingId)?.taskNo}` : '填寫任務資訊並追蹤進度')
+                ),
+                React.createElement('button', { onClick: () => { setIsModalOpen(false); setForm(initialForm); }, className: 'bg-white p-2.5 border rounded-2xl shadow-sm text-slate-400 hover:text-slate-600' }, React.createElement(RawIcon, { name: 'x' }))
             ),
-            React.createElement('form', { onSubmit: handleSubmit, className: 'p-10 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar' },
-                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
-                    React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, '客戶名 *'), React.createElement('input', { required: true, className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1', value: form.client, onChange: e => setForm({...form, client: e.target.value}) })),
-                    React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, '專案名 *'), React.createElement('input', { required: true, className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1', value: form.project, onChange: e => setForm({...form, project: e.target.value}) }))
+            React.createElement('form', { onSubmit: handleSubmit, className: 'p-10 space-y-5 max-h-[72vh] overflow-y-auto no-scrollbar' },
+                React.createElement('div', { className: 'grid grid-cols-2 gap-5' },
+                    React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, '客戶名 *'), React.createElement('input', { required: true, className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none focus:ring-4 focus:ring-indigo-100', value: form.client, onChange: e => setForm({...form, client: e.target.value}) })),
+                    React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, '專案名 *'), React.createElement('input', { required: true, className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none focus:ring-4 focus:ring-indigo-100', value: form.project, onChange: e => setForm({...form, project: e.target.value}) }))
                 ),
-                React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, '工作內容 *'), React.createElement('textarea', { required: true, rows: 2, className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1 outline-none resize-none', value: form.task, onChange: e => setForm({...form, task: e.target.value}) })),
-                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
-                    React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, '指派時間 *'), React.createElement('input', { type: 'date', required: true, className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1', value: form.assignedDate, onChange: e => setForm({...form, assignedDate: e.target.value}) })),
-                    React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, '負責人員'), React.createElement('input', { className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1', value: form.owner, onChange: e => setForm({...form, owner: e.target.value}) }))
+                React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, '工作內容 *'), React.createElement('textarea', { required: true, rows: 2, className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none resize-none focus:ring-4 focus:ring-indigo-100', value: form.task, onChange: e => setForm({...form, task: e.target.value}) })),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-5' },
+                    React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, '指派時間 *'), React.createElement('input', { type: 'date', required: true, className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none', value: form.assignedDate, onChange: e => setForm({...form, assignedDate: e.target.value}) })),
+                    React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, '負責人員'), React.createElement('input', { className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none', value: form.owner, onChange: e => setForm({...form, owner: e.target.value}) }))
                 ),
-                React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
-                    React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, 'Task 狀態'), React.createElement('select', { className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1', value: form.status, onChange: e => setForm({...form, status: e.target.value}) }, Object.keys(STATUS_OPTIONS).map(s => React.createElement('option', { key: s, value: s }, s)))),
-                    React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400' }, '預計結束時間 *'), React.createElement('input', { type: 'date', required: true, className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1', value: form.dueDate, onChange: e => setForm({...form, dueDate: e.target.value}) }))
+                React.createElement('div', { className: 'grid grid-cols-2 gap-5' },
+                    React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, 'Task 狀態'), React.createElement('select', { className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none', value: form.status, onChange: e => setForm({...form, status: e.target.value}) }, Object.keys(STATUS_OPTIONS).map(s => React.createElement('option', { key: s, value: s }, s)))),
+                    React.createElement('div', { className: 'space-y-2' }, React.createElement('label', { className: 'text-[11px] font-black text-slate-400 uppercase tracking-widest px-1' }, '預計結束時間 *'), React.createElement('input', { type: 'date', required: true, className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold mt-1 outline-none', value: form.dueDate, onChange: e => setForm({...form, dueDate: e.target.value}) }))
                 ),
-                React.createElement('div', null, React.createElement('label', { className: 'text-xs font-bold text-slate-400 flex justify-between' }, '備註說明', React.createElement('button', { type: 'button', onClick: () => attachmentRef.current.click(), className: 'text-indigo-600 text-xs font-black' }, '附加檔案')), React.createElement('textarea', { rows: 2, className: 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mt-1 resize-none', value: form.remarks, onChange: e => setForm({...form, remarks: e.target.value}) }), React.createElement('input', { type: 'file', ref: attachmentRef, className: 'hidden', onChange: handleFileUpload }), form.files && form.files.length > 0 && React.createElement('div', { className: 'mt-2 text-xs text-emerald-500' }, `已附加 ${form.files.length} 個檔案`)),
+                React.createElement('div', { className: 'space-y-2' }, 
+                    React.createElement('label', { className: 'text-[11px] font-black text-slate-400 flex justify-between' }, '備註說明', React.createElement('button', { type: 'button', onClick: () => attachmentRef.current.click(), className: 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg text-[10px] font-black' }, '附加檔案')), 
+                    React.createElement('textarea', { rows: 2, className: 'w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium leading-relaxed mt-1 resize-none focus:ring-4 focus:ring-indigo-100', value: form.remarks, onChange: e => setForm({...form, remarks: e.target.value}) }), 
+                    React.createElement('input', { type: 'file', ref: attachmentRef, className: 'hidden', onChange: handleFileUpload }), 
+                    form.files && form.files.length > 0 && React.createElement('div', { className: 'mt-2 text-xs text-emerald-500 font-bold' }, `已附加 ${form.files.length} 個檔案`)
+                ),
                 React.createElement('div', { className: 'pt-4 flex gap-4' },
-                    React.createElement('button', { type: 'button', onClick: () => { setIsModalOpen(false); setForm(initialForm); }, className: 'flex-1 py-3 border rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50' }, '取消'),
-                    React.createElement('button', { type: 'submit', className: 'flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700' }, '儲存任務')
+                    React.createElement('button', { type: 'button', onClick: () => { setIsModalOpen(false); setForm(initialForm); }, className: 'flex-1 py-4 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50' }, '取消'),
+                    React.createElement('button', { type: 'submit', className: 'flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-200' }, '儲存任務')
                 )
             )
         )
     );
 
-    return React.createElement('div', { className: 'min-h-screen pb-20' }, headerElement, React.createElement('main', { className: 'max-w-7xl mx-auto px-6 py-8' }, filterElement, mainTableElement), modalElement);
+    return React.createElement('div', { className: 'min-h-screen pb-20' }, headerElement, React.createElement('main', { className: 'max-w-7xl mx-auto px-6 py-8' }, kpiElement, filterElement, tableElement), modalElement);
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
